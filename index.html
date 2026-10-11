@@ -1,1192 +1,910 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Eye,
-  EyeOff,
-  QrCode,
-  ArrowUpRight,
-  ArrowDownLeft,
-  CreditCard,
-  DollarSign,
-  ChevronRight,
-  User,
-  HelpCircle,
-  Bell,
-  Sparkles,
-  TrendingUp,
-  X,
-  PiggyBank,
-  Receipt,
-  ShoppingBag,
-  Building2,
-  Plus,
-  Gift,
-  Coins,
-  Check
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full bg-slate-950">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Simulador Nubank Mobile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        nu: {
+                            purple: '#820AD1',
+                            darkPurple: '#530082',
+                            deepPurple: '#19002E',
+                            black: '#0D0D0E',
+                            card: '#19191B',
+                            cardHover: '#242427',
+                            border: '#2A2A2E',
+                            accent: '#A855F7',
+                            gold: '#F59E0B'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 
-export default function App() {
-  // 1. PERSISTENT STATE WITH LOCALSTORAGE (DOES NOT RESET ON REFRESH)
-  const [showBalance, setShowBalance] = useState(() => {
-    const saved = localStorage.getItem('nu_show_balance');
-    return saved !== null ? JSON.parse(saved) : true;
-  });
-
-  const [balance, setBalance] = useState(() => {
-    const saved = localStorage.getItem('nu_balance');
-    return saved !== null ? JSON.parse(saved) : 1250.50;
-  });
-
-  const [creditLimit, setCreditLimit] = useState(() => {
-    const saved = localStorage.getItem('nu_credit_limit');
-    return saved !== null ? JSON.parse(saved) : 2500.00;
-  });
-
-  const [usedCredit, setUsedCredit] = useState(() => {
-    const saved = localStorage.getItem('nu_used_credit');
-    return saved !== null ? JSON.parse(saved) : 340.20;
-  });
-
-  const [caixinhas, setCaixinhas] = useState(() => {
-    const saved = localStorage.getItem('nu_caixinhas');
-    return saved !== null ? JSON.parse(saved) : [
-      { id: 1, name: 'Reserva de Emergência', amount: 800.00, cdi: '100% do CDI' },
-      { id: 2, name: 'Viagem de Férias', amount: 450.00, cdi: '100% do CDI' }
-    ];
-  });
-
-  const [employeeCards, setEmployeeCards] = useState(() => {
-    const saved = localStorage.getItem('nu_employee_cards');
-    return saved !== null ? JSON.parse(saved) : [
-      { id: 1, employeeName: 'Natan Silva (Titular)', role: 'Gestor Geral', limit: 10000, used: 1240.50, status: 'Ativo', number: '•••• 9942' },
-      { id: 2, employeeName: 'Equipe Marketing', role: 'Anúncios & Mídia', limit: 5000, used: 850.00, status: 'Ativo', number: '•••• 3110' }
-    ];
-  });
-
-  const [transactions, setTransactions] = useState(() => {
-    const saved = localStorage.getItem('nu_transactions');
-    return saved !== null ? JSON.parse(saved) : [
-      { id: 1, title: 'Pix recebido', description: 'Maria Silva', amount: 150.00, type: 'in', date: 'Hoje, 14:20' },
-      { id: 2, title: 'Pagamento de fatura', description: 'Cartão Nubank', amount: -120.00, type: 'out', date: 'Ontem, 09:15' },
-      { id: 3, title: 'Nu Shopping Cashback', description: 'Magalu Cashback', amount: 18.50, type: 'in', date: '09 OUT' },
-      { id: 4, title: 'Supermercado Silva', description: 'Débito no cartão', amount: -89.90, type: 'out', date: '08 OUT' }
-    ];
-  });
-
-  useEffect(() => {
-    localStorage.setItem('nu_show_balance', JSON.stringify(showBalance));
-  }, [showBalance]);
-
-  useEffect(() => {
-    localStorage.setItem('nu_balance', JSON.stringify(balance));
-  }, [balance]);
-
-  useEffect(() => {
-    localStorage.setItem('nu_credit_limit', JSON.stringify(creditLimit));
-  }, [creditLimit]);
-
-  useEffect(() => {
-    localStorage.setItem('nu_used_credit', JSON.stringify(usedCredit));
-  }, [usedCredit]);
-
-  useEffect(() => {
-    localStorage.setItem('nu_caixinhas', JSON.stringify(caixinhas));
-  }, [caixinhas]);
-
-  useEffect(() => {
-    localStorage.setItem('nu_employee_cards', JSON.stringify(employeeCards));
-  }, [employeeCards]);
-
-  useEffect(() => {
-    localStorage.setItem('nu_transactions', JSON.stringify(transactions));
-  }, [transactions]);
-
-  // Inline editing state variables
-  const [isEditingBalance, setIsEditingBalance] = useState(false);
-  const [editBalanceVal, setEditBalanceVal] = useState('');
-
-  const [isEditingLimit, setIsEditingLimit] = useState(false);
-  const [editLimitVal, setEditLimitVal] = useState('');
-
-  const [editingCaixinhaId, setEditingCaixinhaId] = useState(null);
-  const [editCaixinhaVal, setEditCaixinhaVal] = useState('');
-
-  // Navigation & Modal State
-  const [activeTab, setActiveTab] = useState('home'); // 'home', 'invest', 'cards', 'shopping'
-  const [activeModal, setActiveModal] = useState(null); // 'pix', 'deposit', 'pay_invoice', 'caixinhas', 'add_employee_card'
-  const [toastMessage, setToastMessage] = useState(null);
-
-  // Form Inputs
-  const [pixAmount, setPixAmount] = useState('');
-  const [pixRecipient, setPixRecipient] = useState('');
-  const [depositAmount, setDepositAmount] = useState('');
-  const [newCaixinhaName, setNewCaixinhaName] = useState('');
-  const [newCaixinhaAmount, setNewCaixinhaAmount] = useState('');
-  const [selectedCaixinha, setSelectedCaixinha] = useState(null);
-  const [caixinhaActionAmount, setCaixinhaActionAmount] = useState('');
-
-  // New Employee Card Inputs
-  const [newEmployeeName, setNewEmployeeName] = useState('');
-  const [newEmployeeRole, setNewEmployeeRole] = useState('');
-  const [newEmployeeLimit, setNewEmployeeLimit] = useState('');
-
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 3500);
-  };
-
-  const formatCurrency = (val) => {
-    if (!showBalance) return 'R$ ••••';
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(val);
-  };
-
-  // Direct Edit Balance Handler (Click on Digits)
-  const handleStartEditBalance = () => {
-    if (!showBalance) return;
-    setEditBalanceVal(balance.toString());
-    setIsEditingBalance(true);
-  };
-
-  const handleSaveBalance = () => {
-    const parsed = parseFloat(editBalanceVal.replace(',', '.'));
-    if (!isNaN(parsed) && parsed >= 0) {
-      setBalance(parsed);
-      showToast(`Saldo salvo: R$ ${parsed.toFixed(2)}`);
-    } else {
-      showToast('Valor de saldo inválido.');
-    }
-    setIsEditingBalance(false);
-  };
-
-  // Direct Edit Credit Limit Handler
-  const handleStartEditLimit = () => {
-    if (!showBalance) return;
-    setEditLimitVal(creditLimit.toString());
-    setIsEditingLimit(true);
-  };
-
-  const handleSaveLimit = () => {
-    const parsed = parseFloat(editLimitVal.replace(',', '.'));
-    if (!isNaN(parsed) && parsed >= usedCredit) {
-      setCreditLimit(parsed);
-      showToast(`Limite salvo: R$ ${parsed.toFixed(2)}`);
-    } else if (parsed < usedCredit) {
-      showToast('O limite não pode ser menor do que a fatura acumulada.');
-    } else {
-      showToast('Valor de limite inválido.');
-    }
-    setIsEditingLimit(false);
-  };
-
-  // Direct Edit Caixinha Amount Handler
-  const handleStartEditCaixinha = (box) => {
-    if (!showBalance) return;
-    setEditingCaixinhaId(box.id);
-    setEditCaixinhaVal(box.amount.toString());
-  };
-
-  const handleSaveCaixinha = (id) => {
-    const parsed = parseFloat(editCaixinhaVal.replace(',', '.'));
-    if (!isNaN(parsed) && parsed >= 0) {
-      setCaixinhas(caixinhas.map(c => c.id === id ? { ...c, amount: parsed } : c));
-      showToast(`Valor da Caixinha salvo!`);
-    } else {
-      showToast('Valor de Caixinha inválido.');
-    }
-    setEditingCaixinhaId(null);
-  };
-
-  const handlePixSend = (e) => {
-    e.preventDefault();
-    const val = parseFloat(pixAmount);
-    if (isNaN(val) || val <= 0) {
-      showToast('Por favor, informe um valor válido.');
-      return;
-    }
-    if (val > balance) {
-      showToast('Saldo insuficiente em conta!');
-      return;
-    }
-
-    const newBal = balance - val;
-    setBalance(newBal);
-    const newTx = {
-      id: Date.now(),
-      title: 'Pix enviado',
-      description: pixRecipient || 'Destinatário sem nome',
-      amount: -val,
-      type: 'out',
-      date: 'Hoje, Agora'
-    };
-    setTransactions([newTx, ...transactions]);
-    setPixAmount('');
-    setPixRecipient('');
-    setActiveModal(null);
-    showToast(`Pix de R$ ${val.toFixed(2)} enviado!`);
-  };
-
-  const handleDeposit = (e) => {
-    e.preventDefault();
-    const val = parseFloat(depositAmount);
-    if (isNaN(val) || val <= 0) {
-      showToast('Por favor, informe um valor válido.');
-      return;
-    }
-
-    const newBal = balance + val;
-    setBalance(newBal);
-    const newTx = {
-      id: Date.now(),
-      title: 'Depósito recebido',
-      description: 'Via Pix/Boleto',
-      amount: val,
-      type: 'in',
-      date: 'Hoje, Agora'
-    };
-    setTransactions([newTx, ...transactions]);
-    setDepositAmount('');
-    setActiveModal(null);
-    showToast(`Depósito de R$ ${val.toFixed(2)} concluído!`);
-  };
-
-  const handlePayInvoice = () => {
-    if (usedCredit <= 0) {
-      showToast('Você não possui fatura pendente!');
-      return;
-    }
-    if (balance < usedCredit) {
-      showToast('Saldo em conta insuficiente para pagar a fatura.');
-      return;
-    }
-
-    const valPaid = usedCredit;
-    setBalance(prev => prev - valPaid);
-    setUsedCredit(0);
-
-    const newTx = {
-      id: Date.now(),
-      title: 'Pagamento de Fatura',
-      description: 'Cartão de Crédito Nubank',
-      amount: -valPaid,
-      type: 'out',
-      date: 'Hoje, Agora'
-    };
-    setTransactions([newTx, ...transactions]);
-    setActiveModal(null);
-    showToast(`Fatura de R$ ${valPaid.toFixed(2)} paga com sucesso!`);
-  };
-
-  const handleAddCaixinha = (e) => {
-    e.preventDefault();
-    const val = parseFloat(newCaixinhaAmount) || 0;
-    if (!newCaixinhaName.trim()) {
-      showToast('Informe o nome da Caixinha.');
-      return;
-    }
-    if (val > balance) {
-      showToast('Saldo insuficiente para o aporte inicial.');
-      return;
-    }
-
-    if (val > 0) {
-      setBalance(prev => prev - val);
-      const newTx = {
-        id: Date.now(),
-        title: 'Guardado na Caixinha',
-        description: newCaixinhaName,
-        amount: -val,
-        type: 'out',
-        date: 'Hoje, Agora'
-      };
-      setTransactions([newTx, ...transactions]);
-    }
-
-    const newBox = {
-      id: Date.now(),
-      name: newCaixinhaName,
-      amount: val,
-      cdi: '100% do CDI'
-    };
-
-    setCaixinhas([...caixinhas, newBox]);
-    setNewCaixinhaName('');
-    setNewCaixinhaAmount('');
-    showToast(`Caixinha "${newCaixinhaName}" criada!`);
-  };
-
-  const handleCaixinhaDepositOrWithdraw = (isDeposit) => {
-    const val = parseFloat(caixinhaActionAmount);
-    if (isNaN(val) || val <= 0) {
-      showToast('Valor inválido.');
-      return;
-    }
-
-    if (isDeposit) {
-      if (val > balance) {
-        showToast('Saldo em conta insuficiente.');
-        return;
-      }
-      setBalance(prev => prev - val);
-      setCaixinhas(caixinhas.map(c => c.id === selectedCaixinha.id ? { ...c, amount: c.amount + val } : c));
-      showToast(`R$ ${val.toFixed(2)} guardados na Caixinha!`);
-    } else {
-      if (val > selectedCaixinha.amount) {
-        showToast('Valor maior que o saldo da Caixinha.');
-        return;
-      }
-      setBalance(prev => prev + val);
-      setCaixinhas(caixinhas.map(c => c.id === selectedCaixinha.id ? { ...c, amount: c.amount - val } : c));
-      showToast(`R$ ${val.toFixed(2)} resgatados para a conta!`);
-    }
-
-    setCaixinhaActionAmount('');
-    setSelectedCaixinha(null);
-  };
-
-  const handleCreateEmployeeCard = (e) => {
-    e.preventDefault();
-    if (!newEmployeeName.trim() || !newEmployeeRole.trim()) {
-      showToast('Preencha o nome e o cargo/função.');
-      return;
-    }
-
-    const limitVal = parseFloat(newEmployeeLimit) || 2000;
-    const newCard = {
-      id: Date.now(),
-      employeeName: newEmployeeName,
-      role: newEmployeeRole,
-      limit: limitVal,
-      used: 0.00,
-      status: 'Ativo',
-      number: `•••• ${Math.floor(1000 + Math.random() * 9000)}`
-    };
-
-    setEmployeeCards([...employeeCards, newCard]);
-    setNewEmployeeName('');
-    setNewEmployeeRole('');
-    setNewEmployeeLimit('');
-    setActiveModal(null);
-    showToast(`Cartão Corporativo criado para ${newEmployeeName}!`);
-  };
-
-  const totalCaixinhas = caixinhas.reduce((acc, curr) => acc + curr.amount, 0);
-
-  return (
-    <div className="min-h-screen bg-neutral-900 text-white flex justify-center items-center p-0 sm:p-4 font-sans select-none antialiased">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-neutral-800 border border-purple-500/30 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-bounce">
-          <div className="w-2.5 h-2.5 rounded-full bg-purple-500 animate-pulse" />
-          <span className="text-sm font-medium">{toastMessage}</span>
-        </div>
-      )}
-
-      {/* Main Mobile Frame */}
-      <div className="w-full max-w-[420px] h-[100vh] sm:h-[880px] bg-black sm:rounded-[48px] overflow-hidden flex flex-col relative shadow-2xl border-0 sm:border-[8px] border-neutral-800">
+    <style>
+        * {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
         
-        {/* Speaker Design */}
-        <div className="hidden sm:flex justify-center pt-2 pb-1 bg-neutral-950">
-          <div className="w-24 h-4 bg-neutral-900 rounded-full flex items-center justify-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-neutral-800" />
-            <div className="w-10 h-1 bg-neutral-800 rounded-full" />
-          </div>
-        </div>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        {/* Scrollable Screen Content */}
-        <div className="flex-1 overflow-y-auto no-scrollbar pb-24 bg-neutral-950">
-          
-          {/* TOP PURPLE HEADER */}
-          <div className="bg-[#820AD1] p-5 pt-8 rounded-b-none sm:rounded-b-3xl">
-            <div className="flex items-center justify-between mb-6">
-              <div 
-                onClick={() => showToast('Perfil: Natan Silva')}
-                className="w-12 h-12 rounded-full bg-purple-700/60 border border-purple-400/30 flex items-center justify-center cursor-pointer hover:bg-purple-700 active:scale-95 transition"
-              >
-                <User className="w-6 h-6 text-white" />
-              </div>
+        .sheet-up {
+            animation: slideUp 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
 
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => setShowBalance(!showBalance)}
-                  className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-purple-700/50 active:scale-90 transition text-white"
-                >
-                  {showBalance ? <Eye className="w-6 h-6" /> : <EyeOff className="w-6 h-6" />}
-                </button>
-                <button 
-                  onClick={() => showToast('Central de ajuda Nubank')}
-                  className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-purple-700/50 active:scale-90 transition text-white"
-                >
-                  <HelpCircle className="w-6 h-6" />
-                </button>
-                <button 
-                  onClick={() => showToast('Nenhuma notificação nova')}
-                  className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-purple-700/50 active:scale-90 transition text-white"
-                >
-                  <Bell className="w-6 h-6" />
-                </button>
-              </div>
+        .ultraviolet-glow {
+            box-shadow: 0 0 25px rgba(168, 85, 247, 0.25), inset 0 0 15px rgba(168, 85, 247, 0.15);
+        }
+
+        .blur-balance {
+            filter: blur(8px);
+            opacity: 0.6;
+            transition: all 0.2s ease;
+        }
+
+        .editable-val {
+            cursor: pointer;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body class="h-full bg-slate-950 text-white flex justify-center items-center overflow-hidden antialiased">
+
+    <!-- Mobile App Container Mockup -->
+    <div id="app-viewport" class="w-full max-w-md h-full sm:h-[95vh] sm:rounded-[44px] bg-nu-black flex flex-col relative overflow-hidden shadow-2xl border border-neutral-800">
+
+        <!-- APP HEADER (NU PURPLE HERO - NO STATUS BAR) -->
+        <header class="bg-gradient-to-b from-nu-deepPurple via-nu-darkPurple to-nu-purple p-5 pt-6 pb-6 transition-all duration-300">
+            <!-- Top Action Icons -->
+            <div class="flex items-center justify-between mb-5">
+                <!-- User Profile Avatar & Name Click to Edit -->
+                <div onclick="promptEdit('userName')" class="flex items-center space-x-3 cursor-pointer group text-left">
+                    <div class="w-11 h-11 rounded-full bg-white/20 border border-white/30 flex items-center justify-center font-bold text-white shadow-md group-active:scale-95 transition relative">
+                        <span id="avatar-initial">N</span>
+                    </div>
+                </div>
+
+                <!-- Header Action Buttons -->
+                <div class="flex items-center space-x-1.5">
+                    <button id="eye-btn" onclick="toggleBalanceVisibility()" class="p-2.5 rounded-full hover:bg-white/10 active:scale-90 transition text-white" title="Ocultar/Exibir Saldo">
+                        <i id="eye-icon" data-lucide="eye" class="w-5 h-5"></i>
+                    </button>
+                    <button onclick="openModal('modal-cards')" class="p-2.5 rounded-full hover:bg-white/10 active:scale-90 transition text-white relative" title="Meus Cartões">
+                        <i data-lucide="credit-card" class="w-5 h-5"></i>
+                        <span class="absolute top-2 right-2 w-2 h-2 bg-amber-400 rounded-full"></span>
+                    </button>
+                </div>
             </div>
 
-            <p className="text-white font-semibold text-lg">Olá, Natan</p>
-          </div>
-
-          {}
-          {activeTab === 'home' && (
-            <div>
-              {/* Account Balance with Direct Digit Click Editing (NO PENCIL ICON) */}
-              <div className="p-5 pb-2">
-                <div className="flex items-center gap-1 mb-1">
-                  <span className="text-base font-semibold text-neutral-200">Conta</span>
-                  <ChevronRight className="w-5 h-5 text-neutral-400" />
-                </div>
-
-                <div className="my-2">
-                  {isEditingBalance ? (
-                    <div className="flex items-center gap-2 my-1">
-                      <span className="text-2xl font-bold text-white">R$</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={editBalanceVal}
-                        onChange={(e) => setEditBalanceVal(e.target.value)}
-                        onBlur={handleSaveBalance}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSaveBalance()}
-                        className="bg-neutral-900 border border-purple-500 rounded-lg px-3 py-1 text-2xl font-bold text-white focus:outline-none w-48"
-                        autoFocus
-                      />
-                      <button 
-                        onClick={handleSaveBalance} 
-                        className="bg-purple-600 hover:bg-purple-500 text-white p-2 rounded-lg transition"
-                      >
-                        <Check className="w-5 h-5" />
-                      </button>
+            <!-- Greeting & NuCoins Badge -->
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <h1 id="user-greeting" onclick="promptEdit('userName')" class="text-xl font-bold tracking-tight text-white editable-val">Olá, Natan</h1>
                     </div>
-                  ) : (
-                    <div 
-                      onClick={handleStartEditBalance}
-                      className="cursor-pointer group inline-block"
-                      title="Clique nos dígitos para editar o valor"
-                    >
-                      <span className="text-2xl font-bold text-white tracking-tight group-hover:text-purple-300 transition">
-                        {formatCurrency(balance)}
-                      </span>
+                    <div class="flex items-center space-x-1.5 mt-0.5">
+                        <span class="text-[11px] font-semibold text-purple-200 bg-white/15 px-2 py-0.5 rounded-full border border-white/10">Ultravioleta VIP</span>
                     </div>
-                  )}
                 </div>
-              </div>
-
-              {/* Quick Actions Carousel */}
-              <div className="px-5 py-3 overflow-x-auto no-scrollbar flex items-start gap-4">
-                <div className="flex flex-col items-center gap-2 min-w-[72px] cursor-pointer group" onClick={() => setActiveModal('pix')}>
-                  <div className="w-16 h-16 rounded-full bg-neutral-900 border border-neutral-800 group-hover:bg-neutral-800 active:scale-95 transition flex items-center justify-center">
-                    <QrCode className="w-6 h-6 text-white" />
-                  </div>
-                  <span className="text-xs font-semibold text-neutral-200 text-center leading-tight">Pix</span>
-                </div>
-
-                <div className="flex flex-col items-center gap-2 min-w-[72px] cursor-pointer group" onClick={() => setActiveModal('pay_invoice')}>
-                  <div className="w-16 h-16 rounded-full bg-neutral-900 border border-neutral-800 group-hover:bg-neutral-800 active:scale-95 transition flex items-center justify-center">
-                    <Receipt className="w-6 h-6 text-white" />
-                  </div>
-                  <span className="text-xs font-semibold text-neutral-200 text-center leading-tight">Pagar</span>
-                </div>
-
-                <div className="flex flex-col items-center gap-2 min-w-[72px] cursor-pointer group" onClick={() => setActiveModal('pix')}>
-                  <div className="w-16 h-16 rounded-full bg-neutral-900 border border-neutral-800 group-hover:bg-neutral-800 active:scale-95 transition flex items-center justify-center">
-                    <ArrowUpRight className="w-6 h-6 text-white" />
-                  </div>
-                  <span className="text-xs font-semibold text-neutral-200 text-center leading-tight">Transferir</span>
-                </div>
-
-                <div className="flex flex-col items-center gap-2 min-w-[72px] cursor-pointer group" onClick={() => setActiveModal('deposit')}>
-                  <div className="w-16 h-16 rounded-full bg-neutral-900 border border-neutral-800 group-hover:bg-neutral-800 active:scale-95 transition flex items-center justify-center">
-                    <ArrowDownLeft className="w-6 h-6 text-white" />
-                  </div>
-                  <span className="text-xs font-semibold text-neutral-200 text-center leading-tight">Depositar</span>
-                </div>
-
-                <div className="flex flex-col items-center gap-2 min-w-[72px] cursor-pointer group" onClick={() => setActiveModal('caixinhas')}>
-                  <div className="w-16 h-16 rounded-full bg-neutral-900 border border-neutral-800 group-hover:bg-neutral-800 active:scale-95 transition flex items-center justify-center">
-                    <PiggyBank className="w-6 h-6 text-purple-400" />
-                  </div>
-                  <span className="text-xs font-semibold text-neutral-200 text-center leading-tight">Caixinhas</span>
-                </div>
-              </div>
-
-              {/* My Cards Link */}
-              <div className="px-5 py-3">
-                <button 
-                  onClick={() => setActiveTab('cards')}
-                  className="w-full bg-neutral-900 hover:bg-neutral-800/80 active:scale-[0.98] transition rounded-2xl p-4 flex items-center justify-between border border-neutral-800"
-                >
-                  <div className="flex items-center gap-3">
-                    <CreditCard className="w-5 h-5 text-neutral-300" />
-                    <span className="text-sm font-semibold text-neutral-200">Meus cartões</span>
-                  </div>
-                  <span className="text-xs bg-purple-950 text-purple-400 font-bold px-2.5 py-1 rounded-full border border-purple-800/50">
-                    Novo: Cartões Funcionários
-                  </span>
+                <!-- NuCoins Badge Click to Edit -->
+                <button onclick="promptEdit('nucoins')" class="bg-white/15 hover:bg-white/25 border border-white/20 px-3 py-1.5 rounded-full flex items-center space-x-1.5 active:scale-95 transition cursor-pointer">
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-300"></i>
+                    <span id="nucoins-count" class="text-xs font-bold text-white">2.840 NuCoins</span>
                 </button>
-              </div>
+            </div>
+        </header>
 
-              <div className="h-[1px] bg-neutral-900 my-4 mx-5" />
+        <!-- SCROLLABLE APP BODY -->
+        <main class="flex-1 overflow-y-auto no-scrollbar pb-20">
 
-              {/* Credit Card Section (Direct Click Editing - No Pencil Icon) */}
-              <div className="px-5 py-2">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="w-5 h-5 text-neutral-400" />
-                    <span className="text-base font-semibold text-neutral-200">Cartão de crédito</span>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-neutral-400" />
-                </div>
-
-                <p className="text-xs font-medium text-neutral-400 mt-1">Fatura atual</p>
-                <p className="text-xl font-bold text-white my-1">
-                  {formatCurrency(usedCredit)}
-                </p>
-
-                {/* Inline Edit for Credit Limit */}
-                <div className="text-xs text-neutral-400 mt-2 flex items-center gap-1.5 flex-wrap">
-                  <span>Limite total disponível:</span>
-                  {isEditingLimit ? (
-                    <div className="flex items-center gap-1">
-                      <span className="font-semibold text-neutral-300">R$</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={editLimitVal}
-                        onChange={(e) => setEditLimitVal(e.target.value)}
-                        onBlur={handleSaveLimit}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSaveLimit()}
-                        className="bg-neutral-900 border border-purple-500 rounded px-2 py-0.5 text-xs font-bold text-white w-24 focus:outline-none"
-                        autoFocus
-                      />
-                      <button onClick={handleSaveLimit} className="text-purple-400 p-0.5">
-                        <Check className="w-4 h-4" />
-                      </button>
+            <!-- TAB 1: HOME -->
+            <div id="tab-home" class="tab-page space-y-2">
+                
+                <!-- Account Balance Section -->
+                <section class="p-5 border-b border-nu-border/60 hover:bg-neutral-900/40 transition relative group">
+                    <div class="flex items-center justify-between mb-1" onclick="switchTab('finance')">
+                        <span class="text-sm font-semibold text-neutral-300">Conta</span>
+                        <i data-lucide="chevron-right" class="w-5 h-5 text-neutral-500"></i>
                     </div>
-                  ) : (
-                    <span 
-                      onClick={handleStartEditLimit}
-                      className="font-bold text-purple-400 cursor-pointer hover:underline"
-                      title="Clique nos dígitos para alterar seu limite"
-                    >
-                      {formatCurrency(creditLimit - usedCredit)}
-                    </span>
-                  )}
-                </div>
+                    <!-- Direct click to edit Main Balance -->
+                    <div class="mt-1 inline-block">
+                        <span id="main-balance" onclick="promptEdit('balance')" class="text-2xl font-extrabold text-white tracking-tight editable-val">R$ 2.450,80</span>
+                    </div>
+                    <div class="flex items-center space-x-1.5 mt-2 text-[11px] text-emerald-400 font-medium">
+                        <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
+                        <span>Rendendo 100% do CDI hoje</span>
+                    </div>
+                </section>
 
-                <div className="flex items-center gap-3 mt-4">
-                  <button 
-                    onClick={() => setActiveModal('pay_invoice')}
-                    className="bg-neutral-900 hover:bg-neutral-800 text-white font-semibold text-xs py-2.5 px-4 rounded-full border border-neutral-800 active:scale-95 transition"
-                  >
-                    Pagar fatura
-                  </button>
-                  <button 
-                    onClick={handleStartEditLimit}
-                    className="bg-neutral-900 hover:bg-neutral-800 text-white font-semibold text-xs py-2.5 px-4 rounded-full border border-neutral-800 active:scale-95 transition"
-                  >
-                    Ajustar limite
-                  </button>
-                </div>
-              </div>
-
-              <div className="h-[1px] bg-neutral-900 my-4 mx-5" />
-
-              {/* Transactions Activity List */}
-              <div className="px-5 py-2">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-base font-semibold text-neutral-200">Histórico de atividades</span>
-                  <button className="text-xs text-purple-400 font-bold hover:underline">Ver tudo</button>
-                </div>
-
-                <div className="space-y-4">
-                  {transactions.map((tx) => (
-                    <div key={tx.id} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          tx.type === 'in' ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/40' : 'bg-neutral-900 text-neutral-300 border border-neutral-800'
-                        }`}>
-                          {tx.type === 'in' ? <ArrowDownLeft className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
+                <!-- Quick Actions Scrollable Carousel -->
+                <section class="py-4 pl-5 overflow-x-auto no-scrollbar flex space-x-4 border-b border-nu-border/60">
+                    
+                    <!-- Pix -->
+                    <div onclick="openModal('modal-pix')" class="flex flex-col items-center flex-shrink-0 cursor-pointer group">
+                        <div class="w-16 h-16 rounded-full bg-nu-card group-active:scale-95 group-active:bg-neutral-800 flex items-center justify-center mb-2 transition shadow-lg border border-neutral-800">
+                            <i data-lucide="qr-code" class="w-6 h-6 text-white"></i>
                         </div>
-                        <div>
-                          <p className="text-sm font-semibold text-neutral-100">{tx.title}</p>
-                          <p className="text-xs text-neutral-400">{tx.description} • {tx.date}</p>
+                        <span class="text-xs font-medium text-neutral-200">Área Pix</span>
+                    </div>
+
+                    <!-- Pagar -->
+                    <div onclick="openModal('modal-pay')" class="flex flex-col items-center flex-shrink-0 cursor-pointer group">
+                        <div class="w-16 h-16 rounded-full bg-nu-card group-active:scale-95 group-active:bg-neutral-800 flex items-center justify-center mb-2 transition shadow-lg border border-neutral-800">
+                            <i data-lucide="barcode" class="w-6 h-6 text-white"></i>
                         </div>
-                      </div>
-                      <span className={`text-sm font-bold ${
-                        tx.type === 'in' ? 'text-emerald-400' : 'text-neutral-200'
-                      }`}>
-                        {tx.type === 'in' ? '+' : ''}{formatCurrency(tx.amount)}
-                      </span>
+                        <span class="text-xs font-medium text-neutral-200">Pagar</span>
                     </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
 
-          {}
-          {activeTab === 'invest' && (
-            <div className="p-5 space-y-6 animate-in fade-in duration-200">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-xl font-bold text-white">Investimentos & Cripto</h2>
-                  <p className="text-xs text-neutral-400">Patrimônio total acumulado</p>
-                </div>
-                <Coins className="w-8 h-8 text-purple-400" />
-              </div>
-
-              {/* Total Patrimony Banner */}
-              <div className="bg-gradient-to-r from-purple-950 to-neutral-900 p-5 rounded-2xl border border-purple-800/40">
-                <p className="text-xs text-purple-300 font-medium">Total em Investimentos</p>
-                <p className="text-2xl font-bold text-white mt-1">{formatCurrency(totalCaixinhas + 1850.30)}</p>
-                <div className="flex items-center gap-1.5 mt-3 text-emerald-400 text-xs font-bold">
-                  <TrendingUp className="w-4 h-4" />
-                  <span>+1.12% este mês (100% do CDI)</span>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div 
-                  onClick={() => setActiveModal('caixinhas')}
-                  className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:border-purple-500/50 transition"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-purple-950 text-purple-400 flex items-center justify-center">
-                      <PiggyBank className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-white">Caixinhas Nubank</p>
-                      <p className="text-xs text-neutral-400">{caixinhas.length} caixinhas ativas</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-white">{formatCurrency(totalCaixinhas)}</p>
-                    <ChevronRight className="w-4 h-4 text-neutral-500 inline-block" />
-                  </div>
-                </div>
-
-                <div 
-                  onClick={() => showToast('Nu Cripto ativo')}
-                  className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:border-purple-500/50 transition"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-amber-950 text-amber-400 flex items-center justify-center">
-                      <Coins className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-white">Criptomoedas (Bitcoin & Ethereum)</p>
-                      <p className="text-xs text-emerald-400">+4.8% nas últimas 24h</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-white">{formatCurrency(1850.30)}</p>
-                    <ChevronRight className="w-4 h-4 text-neutral-500 inline-block" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {}
-          {activeTab === 'shopping' && (
-            <div className="p-5 space-y-6 animate-in fade-in duration-200">
-              <div>
-                <h2 className="text-xl font-bold text-white">Nu Shopping</h2>
-                <p className="text-xs text-neutral-400">Compre com cashback direto na sua conta</p>
-              </div>
-
-              <div className="bg-gradient-to-r from-purple-900 via-indigo-950 to-neutral-900 p-5 rounded-2xl border border-purple-500/30 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] bg-purple-500 text-white font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">Super Cashback</span>
-                  <p className="text-lg font-bold text-white mt-2">Até 12% de volta</p>
-                  <p className="text-xs text-neutral-300 mt-0.5">Em lojas parceiras selecionadas</p>
-                </div>
-                <Gift className="w-12 h-12 text-purple-400 opacity-80" />
-              </div>
-
-              <h3 className="text-sm font-bold text-neutral-300">Lojas com Cashback</h3>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { name: 'Magalu', cashback: '8% Cashback', icon: '🛍️' },
-                  { name: 'AliExpress', cashback: '10% Cashback', icon: '📦' },
-                  { name: 'Amazon', cashback: '5% Cashback', icon: '⚡' },
-                  { name: 'Casas Bahia', cashback: '12% Cashback', icon: '🏠' }
-                ].map((store, i) => (
-                  <div 
-                    key={i}
-                    onClick={() => showToast(`Acessando ${store.name}...`)}
-                    className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 flex flex-col justify-between hover:border-purple-500 cursor-pointer transition"
-                  >
-                    <div className="text-2xl mb-2">{store.icon}</div>
-                    <div>
-                      <p className="text-sm font-bold text-white">{store.name}</p>
-                      <p className="text-xs font-semibold text-emerald-400 mt-1">{store.cashback}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {}
-          {activeTab === 'cards' && (
-            <div className="p-5 space-y-6 animate-in fade-in duration-200">
-              <div>
-                <h2 className="text-xl font-bold text-white">Meus Cartões</h2>
-                <p className="text-xs text-neutral-400">Gerencie seus cartões pessoais e corporativos</p>
-              </div>
-
-              {/* Personal Physical/Virtual Card */}
-              <div className="space-y-3">
-                <h3 className="text-xs font-bold text-purple-400 uppercase tracking-wider">Cartão Pessoal</h3>
-                <div className="bg-gradient-to-tr from-purple-900 via-purple-700 to-indigo-800 rounded-2xl p-5 shadow-xl border border-purple-500/30 flex flex-col justify-between h-44 relative">
-                  <div className="flex justify-between items-start">
-                    <span className="font-bold text-white tracking-widest text-lg">nubank</span>
-                    <Sparkles className="w-5 h-5 text-purple-300 opacity-80" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-purple-200">Natan Silva</p>
-                    <p className="text-sm font-mono tracking-wider text-white font-semibold">•••• •••• •••• 4092</p>
-                  </div>
-                  <div className="flex justify-between items-end">
-                    <span className="text-[10px] text-purple-200 font-semibold">Físico / Virtual</span>
-                    <span className="text-xs font-bold text-white tracking-widest">VISA</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Employee Cards Section */}
-              <div className="space-y-3 pt-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-purple-400" />
-                    <h3 className="text-xs font-bold text-purple-400 uppercase tracking-wider">Cartões Funcionários / Pessoas</h3>
-                  </div>
-                  <button 
-                    onClick={() => setActiveModal('add_employee_card')}
-                    className="text-xs bg-purple-900/60 hover:bg-purple-800 text-purple-300 font-bold px-3 py-1 rounded-full border border-purple-700/50 flex items-center gap-1 active:scale-95 transition"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    Novo Cartão
-                  </button>
-                </div>
-
-                <div className="space-y-3">
-                  {employeeCards.map((card) => (
-                    <div 
-                      key={card.id}
-                      className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 space-y-3 relative overflow-hidden"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold text-white">{card.employeeName}</span>
-                            <span className="text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800/50 px-2 py-0.5 rounded-full font-bold">
-                              {card.status}
-                            </span>
-                          </div>
-                          <p className="text-xs text-neutral-400 mt-0.5">{card.role} • {card.number}</p>
+                    <!-- Empréstimo -->
+                    <div onclick="openModal('modal-loan')" class="flex flex-col items-center flex-shrink-0 cursor-pointer group">
+                        <div class="w-16 h-16 rounded-full bg-nu-card group-active:scale-95 group-active:bg-neutral-800 flex items-center justify-center mb-2 transition shadow-lg border border-neutral-800">
+                            <i data-lucide="hand-coins" class="w-6 h-6 text-white"></i>
                         </div>
-                        <Building2 className="w-5 h-5 text-neutral-600" />
-                      </div>
-
-                      <div className="bg-neutral-950 p-3 rounded-xl flex justify-between items-center border border-neutral-800/80">
-                        <div>
-                          <p className="text-[10px] text-neutral-500 uppercase font-semibold">Gasto Atual</p>
-                          <p className="text-xs font-bold text-white">{formatCurrency(card.used)}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-[10px] text-neutral-500 uppercase font-semibold">Limite Autorizado</p>
-                          <p className="text-xs font-bold text-purple-400">{formatCurrency(card.limit)}</p>
-                        </div>
-                      </div>
+                        <span class="text-xs font-medium text-neutral-200">Empréstimo</span>
                     </div>
-                  ))}
-                </div>
-              </div>
 
-            </div>
-          )}
-
-        </div>
-
-        {/* BOTTOM NAVIGATION BAR */}
-        <div className="absolute bottom-0 left-0 right-0 bg-neutral-950/90 backdrop-blur-md border-t border-neutral-800 p-3 px-6 flex justify-around items-center z-20">
-          <button 
-            onClick={() => setActiveTab('home')}
-            className={`flex flex-col items-center gap-1 ${activeTab === 'home' ? 'text-purple-500' : 'text-neutral-500 hover:text-white'} transition`}
-          >
-            <ArrowUpRight className="w-5 h-5 rotate-45" />
-            <span className="text-[10px] font-bold">Início</span>
-          </button>
-
-          <button 
-            onClick={() => setActiveTab('invest')}
-            className={`flex flex-col items-center gap-1 ${activeTab === 'invest' ? 'text-purple-500' : 'text-neutral-500 hover:text-white'} transition`}
-          >
-            <DollarSign className="w-5 h-5" />
-            <span className="text-[10px] font-bold">Finanças</span>
-          </button>
-
-          <button 
-            onClick={() => setActiveTab('shopping')}
-            className={`flex flex-col items-center gap-1 ${activeTab === 'shopping' ? 'text-purple-500' : 'text-neutral-500 hover:text-white'} transition`}
-          >
-            <ShoppingBag className="w-5 h-5" />
-            <span className="text-[10px] font-bold">Shopping</span>
-          </button>
-
-          <button 
-            onClick={() => setActiveTab('cards')}
-            className={`flex flex-col items-center gap-1 ${activeTab === 'cards' ? 'text-purple-500' : 'text-neutral-500 hover:text-white'} transition`}
-          >
-            <CreditCard className="w-5 h-5" />
-            <span className="text-[10px] font-bold">Cartões</span>
-          </button>
-        </div>
-
-        {}
-        {/* Pix Modal */}
-        {activeModal === 'pix' && (
-          <div className="absolute inset-0 bg-neutral-950 z-40 p-5 flex flex-col justify-between animate-in slide-in-from-bottom duration-200">
-            <div>
-              <div className="flex justify-between items-center mb-6">
-                <button onClick={() => setActiveModal(null)} className="p-2 rounded-full hover:bg-neutral-900 text-neutral-400 hover:text-white">
-                  <X className="w-6 h-6" />
-                </button>
-                <span className="font-bold text-sm text-neutral-300">Área Pix</span>
-                <div className="w-6" />
-              </div>
-
-              <h2 className="text-xl font-bold text-white mb-2">Qual o valor da transferência?</h2>
-              <p className="text-xs text-neutral-400 mb-6">Saldo disponível: <span className="font-semibold text-white">{formatCurrency(balance)}</span></p>
-
-              <form onSubmit={handlePixSend} className="space-y-4">
-                <div>
-                  <label className="text-xs font-semibold text-neutral-400 block mb-1">Valor (R$)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="0,00"
-                    value={pixAmount}
-                    onChange={(e) => setPixAmount(e.target.value)}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl p-3 text-lg font-bold text-white focus:outline-none focus:border-purple-500"
-                    autoFocus
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-neutral-400 block mb-1">Nome ou Chave Pix</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: João da Silva / CPF / Telefone"
-                    value={pixRecipient}
-                    onChange={(e) => setPixRecipient(e.target.value)}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-purple-500"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-[#820AD1] hover:bg-purple-700 active:scale-95 text-white font-bold py-3.5 rounded-full transition mt-4"
-                >
-                  Transferir agora
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Deposit Modal */}
-        {activeModal === 'deposit' && (
-          <div className="absolute inset-0 bg-neutral-950 z-40 p-5 flex flex-col justify-between animate-in slide-in-from-bottom duration-200">
-            <div>
-              <div className="flex justify-between items-center mb-6">
-                <button onClick={() => setActiveModal(null)} className="p-2 rounded-full hover:bg-neutral-900 text-neutral-400 hover:text-white">
-                  <X className="w-6 h-6" />
-                </button>
-                <span className="font-bold text-sm text-neutral-300">Depositar</span>
-                <div className="w-6" />
-              </div>
-
-              <h2 className="text-xl font-bold text-white mb-2">Quanto você quer depositar?</h2>
-              <p className="text-xs text-neutral-400 mb-6">O dinheiro entra na conta imediatamente.</p>
-
-              <form onSubmit={handleDeposit} className="space-y-4">
-                <div>
-                  <label className="text-xs font-semibold text-neutral-400 block mb-1">Valor do depósito (R$)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="0,00"
-                    value={depositAmount}
-                    onChange={(e) => setDepositAmount(e.target.value)}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl p-3 text-lg font-bold text-white focus:outline-none focus:border-purple-500"
-                    autoFocus
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-[#820AD1] hover:bg-purple-700 active:scale-95 text-white font-bold py-3.5 rounded-full transition mt-4"
-                >
-                  Confirmar depósito
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Add Employee Card Modal */}
-        {activeModal === 'add_employee_card' && (
-          <div className="absolute inset-0 bg-neutral-950 z-40 p-5 flex flex-col justify-between animate-in slide-in-from-bottom duration-200 overflow-y-auto no-scrollbar">
-            <div>
-              <div className="flex justify-between items-center mb-6">
-                <button onClick={() => setActiveModal(null)} className="p-2 rounded-full hover:bg-neutral-900 text-neutral-400 hover:text-white">
-                  <X className="w-6 h-6" />
-                </button>
-                <span className="font-bold text-sm text-neutral-300">Cartão Funcional</span>
-                <div className="w-6" />
-              </div>
-
-              <h2 className="text-xl font-bold text-white mb-2">Emitir Cartão de Funcionário</h2>
-              <p className="text-xs text-neutral-400 mb-6">Crie um cartão corporativo exclusivo ligado à sua conta.</p>
-
-              <form onSubmit={handleCreateEmployeeCard} className="space-y-4">
-                <div>
-                  <label className="text-xs font-semibold text-neutral-400 block mb-1">Nome do Funcionário ou Setor</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: Carlos Andrade ou 'Equipe Vendas'"
-                    value={newEmployeeName}
-                    onChange={(e) => setNewEmployeeName(e.target.value)}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-purple-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-neutral-400 block mb-1">Cargo / Função</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: Gerente Operacional"
-                    value={newEmployeeRole}
-                    onChange={(e) => setNewEmployeeRole(e.target.value)}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-purple-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-neutral-400 block mb-1">Limite Máximo do Cartão (R$)</label>
-                  <input
-                    type="number"
-                    placeholder="2000,00"
-                    value={newEmployeeLimit}
-                    onChange={(e) => setNewEmployeeLimit(e.target.value)}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-purple-500"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-[#820AD1] hover:bg-purple-700 active:scale-95 text-white font-bold py-3.5 rounded-full transition mt-4"
-                >
-                  Emitir Cartão Corporativo
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Caixinhas Modal with Direct Click Editing (NO PENCIL ICON) */}
-        {activeModal === 'caixinhas' && (
-          <div className="absolute inset-0 bg-neutral-950 z-40 p-5 flex flex-col overflow-y-auto no-scrollbar animate-in slide-in-from-bottom duration-200">
-            <div className="flex justify-between items-center mb-6">
-              <button onClick={() => { setActiveModal(null); setSelectedCaixinha(null); }} className="p-2 rounded-full hover:bg-neutral-900 text-neutral-400 hover:text-white">
-                <X className="w-6 h-6" />
-              </button>
-              <span className="font-bold text-sm text-neutral-300">Caixinhas Nubank</span>
-              <div className="w-6" />
-            </div>
-
-            {!selectedCaixinha ? (
-              <div className="space-y-6">
-                <div className="bg-purple-950/40 border border-purple-800/40 rounded-2xl p-4 flex items-center gap-3">
-                  <PiggyBank className="w-8 h-8 text-purple-400 shrink-0" />
-                  <div>
-                    <p className="text-xs text-purple-300 font-semibold">Rendimento automático</p>
-                    <p className="text-xs text-neutral-300 mt-0.5">Suas Caixinhas rendem <span className="text-purple-400 font-bold">100% do CDI</span> todos os dias úteis.</p>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-bold text-neutral-300 mb-3">Minhas Caixinhas</h3>
-                  <div className="space-y-3">
-                    {caixinhas.map((box) => (
-                      <div 
-                        key={box.id} 
-                        className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 flex justify-between items-center hover:border-purple-500/50 transition"
-                      >
-                        <div onClick={() => setSelectedCaixinha(box)} className="cursor-pointer flex-1">
-                          <p className="text-sm font-bold text-white">{box.name}</p>
-                          <span className="text-[10px] bg-purple-950 text-purple-400 px-2 py-0.5 rounded-full font-bold inline-block mt-1">{box.cdi}</span>
+                    <!-- Transferir -->
+                    <div onclick="openModal('modal-transfer')" class="flex flex-col items-center flex-shrink-0 cursor-pointer group">
+                        <div class="w-16 h-16 rounded-full bg-nu-card group-active:scale-95 group-active:bg-neutral-800 flex items-center justify-center mb-2 transition shadow-lg border border-neutral-800">
+                            <i data-lucide="arrow-up-right" class="w-6 h-6 text-white"></i>
                         </div>
+                        <span class="text-xs font-medium text-neutral-200">Transferir</span>
+                    </div>
 
-                        {/* Direct Click Digit Editing (NO PENCIL ICON) */}
-                        <div className="text-right">
-                          {editingCaixinhaId === box.id ? (
-                            <div className="flex items-center gap-1">
-                              <span className="text-xs font-bold text-white">R$</span>
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={editCaixinhaVal}
-                                onChange={(e) => setEditCaixinhaVal(e.target.value)}
-                                onBlur={() => handleSaveCaixinha(box.id)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSaveCaixinha(box.id)}
-                                className="bg-neutral-950 border border-purple-500 rounded px-2 py-1 text-xs font-bold text-white w-20 focus:outline-none"
-                                autoFocus
-                              />
-                              <button onClick={() => handleSaveCaixinha(box.id)} className="text-purple-400">
-                                <Check className="w-4 h-4" />
-                              </button>
+                    <!-- Depositar -->
+                    <div onclick="openModal('modal-deposit')" class="flex flex-col items-center flex-shrink-0 cursor-pointer group">
+                        <div class="w-16 h-16 rounded-full bg-nu-card group-active:scale-95 group-active:bg-neutral-800 flex items-center justify-center mb-2 transition shadow-lg border border-neutral-800">
+                            <i data-lucide="arrow-down-left" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <span class="text-xs font-medium text-neutral-200">Depositar</span>
+                    </div>
+
+                    <!-- Recarga -->
+                    <div onclick="openModal('modal-recharge')" class="flex flex-col items-center flex-shrink-0 cursor-pointer group">
+                        <div class="w-16 h-16 rounded-full bg-nu-card group-active:scale-95 group-active:bg-neutral-800 flex items-center justify-center mb-2 transition shadow-lg border border-neutral-800">
+                            <i data-lucide="smartphone" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <span class="text-xs font-medium text-neutral-200">Recarga</span>
+                    </div>
+
+                    <!-- Caixinhas -->
+                    <div onclick="openModal('modal-caixinhas')" class="flex flex-col items-center flex-shrink-0 cursor-pointer group">
+                        <div class="w-16 h-16 rounded-full bg-nu-card group-active:scale-95 group-active:bg-neutral-800 flex items-center justify-center mb-2 transition shadow-lg border border-neutral-800">
+                            <i data-lucide="piggy-bank" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <span class="text-xs font-medium text-neutral-200">Caixinhas</span>
+                    </div>
+
+                    <!-- Crypto -->
+                    <div onclick="openModal('modal-crypto')" class="flex flex-col items-center flex-shrink-0 cursor-pointer group pr-5">
+                        <div class="w-16 h-16 rounded-full bg-nu-card group-active:scale-95 group-active:bg-neutral-800 flex items-center justify-center mb-2 transition shadow-lg border border-neutral-800">
+                            <i data-lucide="bitcoin" class="w-6 h-6 text-amber-400"></i>
+                        </div>
+                        <span class="text-xs font-medium text-neutral-200">Nu Cripto</span>
+                    </div>
+
+                </section>
+
+                <!-- My Cards Shortcut -->
+                <section class="p-5 border-b border-nu-border/60">
+                    <button onclick="openModal('modal-cards')" class="w-full bg-nu-card hover:bg-nu-cardHover active:scale-[0.98] p-4 rounded-2xl flex items-center justify-between border border-neutral-800 transition">
+                        <div class="flex items-center space-x-3.5">
+                            <div class="w-10 h-10 rounded-xl bg-nu-purple/20 flex items-center justify-center text-nu-accent">
+                                <i data-lucide="credit-card" class="w-5 h-5"></i>
                             </div>
-                          ) : (
-                            <div 
-                              onClick={() => handleStartEditCaixinha(box)}
-                              className="cursor-pointer"
-                              title="Clique para editar este valor diretamente"
-                            >
-                              <p className="text-sm font-bold text-white hover:text-purple-300">{formatCurrency(box.amount)}</p>
+                            <div class="text-left">
+                                <span class="text-sm font-bold text-white block">Meus cartões</span>
+                                <span class="text-xs text-neutral-400">Físico, Virtuais e Ultravioleta VIP</span>
                             </div>
-                          )}
-                          <button 
-                            onClick={() => setSelectedCaixinha(box)}
-                            className="text-xs text-purple-400 font-semibold block mt-1 hover:underline"
-                          >
-                            Ações →
-                          </button>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-4 mt-4">
-                  <h3 className="text-sm font-bold text-white mb-3">Criar nova Caixinha</h3>
-                  <form onSubmit={handleAddCaixinha} className="space-y-3">
-                    <input
-                      type="text"
-                      placeholder="Nome do objetivo (ex: Viagem)"
-                      value={newCaixinhaName}
-                      onChange={(e) => setNewCaixinhaName(e.target.value)}
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-purple-500"
-                    />
-                    <input
-                      type="number"
-                      step="0.01"
-                      placeholder="Valor inicial (opcional)"
-                      value={newCaixinhaAmount}
-                      onChange={(e) => setNewCaixinhaAmount(e.target.value)}
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-purple-500"
-                    />
-                    <button
-                      type="submit"
-                      className="w-full bg-[#820AD1] hover:bg-purple-700 text-white font-bold text-xs py-2.5 rounded-xl transition"
-                    >
-                      + Criar Caixinha
+                        <i data-lucide="chevron-right" class="w-5 h-5 text-neutral-500"></i>
                     </button>
-                  </form>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-5">
-                <button onClick={() => setSelectedCaixinha(null)} className="text-xs text-purple-400 font-bold hover:underline mb-2 block">
-                  ← Voltar para a lista
-                </button>
+                </section>
 
-                <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 text-center">
-                  <p className="text-xs text-neutral-400 font-semibold">{selectedCaixinha.name}</p>
-                  <p className="text-3xl font-bold text-white my-2">{formatCurrency(selectedCaixinha.amount)}</p>
-                  <span className="text-xs text-purple-400 font-bold bg-purple-950 px-3 py-1 rounded-full">Rendimento 100% do CDI</span>
-                </div>
+                <!-- Credit Card Section -->
+                <section class="p-5 border-b border-nu-border/60">
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="credit-card" class="w-5 h-5 text-neutral-300"></i>
+                            <span class="text-sm font-bold text-neutral-200">Cartão de crédito</span>
+                        </div>
+                    </div>
 
-                <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4">
-                  <p className="text-xs font-bold text-neutral-300 mb-3">Guardar ou Resgatar</p>
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="Valor (R$)"
-                    value={caixinhaActionAmount}
-                    onChange={(e) => setCaixinhaActionAmount(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-purple-500 mb-4"
-                  />
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={() => handleCaixinhaDepositOrWithdraw(true)}
-                      className="bg-[#820AD1] hover:bg-purple-700 text-white font-bold text-xs py-3 rounded-xl transition"
-                    >
-                      Guardar
-                    </button>
-                    <button
-                      onClick={() => handleCaixinhaDepositOrWithdraw(false)}
-                      className="bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs py-3 rounded-xl transition border border-neutral-700"
-                    >
-                      Resgatar
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+                    <p class="text-xs font-medium text-neutral-400 mb-1">Fatura atual</p>
+                    
+                    <!-- Direct click to edit Credit Card Invoice -->
+                    <div>
+                        <span id="credit-invoice" onclick="promptEdit('creditInvoice')" class="text-2xl font-extrabold tracking-tight text-white editable-val">R$ 840,20</span>
+                    </div>
 
-        {/* Pay Invoice Modal */}
-        {activeModal === 'pay_invoice' && (
-          <div className="absolute inset-0 bg-neutral-950 z-40 p-5 flex flex-col justify-between animate-in slide-in-from-bottom duration-200">
-            <div>
-              <div className="flex justify-between items-center mb-6">
-                <button onClick={() => setActiveModal(null)} className="p-2 rounded-full hover:bg-neutral-900 text-neutral-400 hover:text-white">
-                  <X className="w-6 h-6" />
-                </button>
-                <span className="font-bold text-sm text-neutral-300">Pagar fatura</span>
-                <div className="w-6" />
-              </div>
+                    <!-- Direct click to edit Credit Limit -->
+                    <p class="text-xs text-neutral-400 mt-2">Limite disponível: 
+                        <span id="credit-limit" onclick="promptEdit('creditLimit')" class="font-bold text-emerald-400 editable-val">R$ 4.159,80</span>
+                    </p>
 
-              <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 mb-6 text-center">
-                <p className="text-xs text-neutral-400">Valor da fatura atual</p>
-                <p className="text-3xl font-bold text-white my-2">{formatCurrency(usedCredit)}</p>
-                <p className="text-xs text-neutral-400">Saldo na conta: <span className="font-semibold text-white">{formatCurrency(balance)}</span></p>
-              </div>
+                    <div class="flex space-x-3 mt-4">
+                        <button onclick="payInvoice()" class="px-5 py-2.5 bg-nu-purple hover:bg-purple-700 text-white text-xs font-bold rounded-full active:scale-95 transition shadow-lg">Pagar fatura</button>
+                        <button onclick="openModal('modal-cards')" class="px-5 py-2.5 bg-nu-card hover:bg-neutral-800 text-white text-xs font-bold rounded-full border border-neutral-700 active:scale-95 transition">Meus Cartões</button>
+                    </div>
+                </section>
 
-              {usedCredit <= 0 ? (
-                <p className="text-sm text-emerald-400 text-center font-semibold">Você não possui fatura em aberto! 🎉</p>
-              ) : (
-                <p className="text-xs text-neutral-400 text-center">O valor será debitado do seu saldo em conta e seu limite será liberado instantaneamente.</p>
-              )}
+                <!-- Extrato Feed -->
+                <section class="p-5">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-bold text-neutral-200">Histórico de Atividades</h3>
+                        <button onclick="clearHistory()" class="text-[11px] text-neutral-400 hover:text-white">Limpar</button>
+                    </div>
+
+                    <div id="extrato-feed" class="space-y-4">
+                        <!-- Dynamic items -->
+                    </div>
+                </section>
+
             </div>
 
-            {usedCredit > 0 && (
-              <button
-                onClick={handlePayInvoice}
-                className="w-full bg-[#820AD1] hover:bg-purple-700 active:scale-95 text-white font-bold py-3.5 rounded-full transition"
-              >
-                Pagar com saldo da conta
-              </button>
-            )}
-          </div>
-        )}
+            <!-- TAB 2: FINANÇAS ($) -->
+            <div id="tab-finance" class="tab-page hidden p-5 space-y-6">
+                <div class="border-b border-nu-border/60 pb-4">
+                    <h2 class="text-2xl font-extrabold text-white">Finanças</h2>
+                </div>
 
-      </div>
+                <!-- Total Patrimony Card -->
+                <div class="bg-gradient-to-br from-nu-deepPurple via-nu-card to-black p-5 rounded-3xl border border-purple-900/40 shadow-xl">
+                    <span class="text-[11px] text-purple-300 font-semibold uppercase tracking-wider">Patrimônio Total</span>
+                    <h3 id="finance-total-networth" class="text-3xl font-black text-white mt-1">R$ 5.950,80</h3>
+                    
+                    <div class="grid grid-cols-2 gap-3 mt-4 text-xs">
+                        <div class="bg-black/50 p-3 rounded-2xl border border-neutral-800">
+                            <span class="text-neutral-400 block text-[10px] uppercase font-semibold">Conta Principal</span>
+                            <span id="fin-acc-bal" onclick="promptEdit('balance')" class="font-bold text-white text-sm editable-val">R$ 2.450,80</span>
+                        </div>
+                        <div class="bg-black/50 p-3 rounded-2xl border border-neutral-800">
+                            <span class="text-neutral-400 block text-[10px] uppercase font-semibold">Caixinhas CDI</span>
+                            <span id="fin-box-bal" onclick="promptEdit('caixinhaBalance')" class="font-bold text-emerald-400 text-sm editable-val">R$ 3.500,00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Credit Limit Slider -->
+                <div class="bg-nu-card p-5 rounded-3xl border border-neutral-800 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h4 class="text-sm font-bold text-white">Ajuste Rápido de Limite</h4>
+                        <span id="limit-slider-val" onclick="promptEdit('creditLimit')" class="text-sm font-extrabold text-emerald-400 editable-val">R$ 4.159,80</span>
+                    </div>
+                    <input id="credit-limit-slider" type="range" min="0" max="50000" step="100" value="4159.80" oninput="updateLimitFromSlider(this.value)" class="w-full accent-nu-purple bg-neutral-800 rounded-lg cursor-pointer">
+                </div>
+            </div>
+
+            <!-- TAB 3: HUB NUBANK -->
+            <div id="tab-hub" class="tab-page hidden p-5 space-y-6">
+                <div class="flex items-center justify-between border-b border-nu-border/60 pb-4">
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-white">Aba Nubank</h2>
+                        <p class="text-xs text-neutral-400">Shopping, Cripto e Benefícios VIP</p>
+                    </div>
+                    <div class="w-11 h-11 rounded-2xl bg-nu-purple text-white flex items-center justify-center font-bold">
+                        <i data-lucide="grid" class="w-6 h-6"></i>
+                    </div>
+                </div>
+
+                <!-- NuCoin Banner -->
+                <div class="bg-gradient-to-r from-purple-900 via-nu-purple to-indigo-900 p-6 rounded-3xl relative overflow-hidden shadow-2xl border border-purple-500/30">
+                    <div class="relative z-10 space-y-2">
+                        <div class="inline-flex items-center space-x-1 bg-black/40 px-3 py-1 rounded-full border border-amber-400/30">
+                            <i data-lucide="coins" class="w-4 h-4 text-amber-300"></i>
+                            <span class="text-xs font-bold text-amber-300">Nucoin Nível 7 VIP</span>
+                        </div>
+                        <div>
+                            <h3 id="hub-nucoins-val" onclick="promptEdit('nucoins')" class="text-2xl font-black text-white editable-val">2.840 NuCoins</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- BOTTOM NAVIGATION BAR -->
+        <nav class="absolute bottom-0 left-0 right-0 h-16 bg-nu-black/95 backdrop-blur-lg border-t border-nu-border/80 flex justify-around items-center px-4 z-40">
+            <button id="nav-home" onclick="switchTab('home')" class="flex flex-col items-center justify-center w-full text-nu-purple">
+                <i data-lucide="arrow-up-down" class="w-5 h-5"></i>
+                <span class="text-[10px] font-semibold mt-1">Início</span>
+            </button>
+            <button id="nav-finance" onclick="switchTab('finance')" class="flex flex-col items-center justify-center w-full text-neutral-500 hover:text-white">
+                <i data-lucide="dollar-sign" class="w-5 h-5"></i>
+                <span class="text-[10px] font-semibold mt-1">Finanças</span>
+            </button>
+            <button id="nav-hub" onclick="switchTab('hub')" class="flex flex-col items-center justify-center w-full text-neutral-500 hover:text-white">
+                <i data-lucide="grid" class="w-5 h-5"></i>
+                <span class="text-[10px] font-semibold mt-1">Aba Nubank</span>
+            </button>
+        </nav>
+
     </div>
-  );
-}
+
+    <!-- DIRECT CLICK VALUE EDIT MODAL -->
+    <div id="modal-quick-edit" class="fixed inset-0 bg-black/80 z-50 hidden flex justify-center items-end sm:items-center p-0 sm:p-4">
+        <div class="w-full max-w-md bg-nu-black rounded-t-3xl sm:rounded-3xl p-6 sheet-up border border-purple-500/40">
+            <div class="flex justify-between items-center mb-4 border-b border-neutral-800 pb-3">
+                <div class="flex items-center space-x-2">
+                    <div class="p-2 bg-nu-purple/20 text-nu-accent rounded-xl">
+                        <i data-lucide="edit-3" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 id="quick-edit-title" class="text-lg font-extrabold text-white">Editar Valor</h3>
+                        <p class="text-xs text-neutral-400">Insira o novo valor desejado abaixo</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('modal-quick-edit')" class="p-2 text-neutral-400 hover:text-white">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <form onsubmit="saveQuickEdit(event)" class="space-y-4 mb-4">
+                <div>
+                    <label id="quick-edit-label" class="text-xs text-purple-300 block mb-1.5 font-semibold">Valor</label>
+                    <input id="quick-edit-input" type="text" class="w-full bg-nu-card border border-purple-500/50 rounded-2xl p-4 text-xl font-black text-white focus:outline-none focus:border-nu-accent" autofocus>
+                </div>
+
+                <div class="flex space-x-3 pt-2">
+                    <button type="button" onclick="closeModal('modal-quick-edit')" class="w-1/2 py-3.5 bg-nu-card border border-neutral-800 font-bold text-xs rounded-full text-neutral-400 hover:text-white">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="w-1/2 py-3.5 bg-nu-purple hover:bg-purple-700 font-extrabold text-xs rounded-full text-white shadow-lg active:scale-95 transition">
+                        Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: MEUS CARTÕES -->
+    <div id="modal-cards" class="fixed inset-0 bg-black/80 z-50 hidden flex justify-center items-end sm:items-center p-0 sm:p-4">
+        <div class="w-full max-w-md bg-nu-black rounded-t-3xl sm:rounded-3xl p-6 sheet-up border border-neutral-800 max-h-[92vh] overflow-y-auto no-scrollbar">
+            <div class="flex justify-between items-center mb-5">
+                <div>
+                    <h3 class="text-xl font-bold text-white">Meus Cartões</h3>
+                    <p class="text-xs text-neutral-400">Cartões físico, virtuais e Ultravioleta</p>
+                </div>
+                <button onclick="closeModal('modal-cards')" class="p-2 text-neutral-400 hover:text-white">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <div class="space-y-5 mb-6">
+                <!-- NUBANK ULTRAVIOLETA BLACK FOUNDER -->
+                <div class="bg-gradient-to-tr from-black via-zinc-900 to-stone-900 p-5 rounded-2xl border border-purple-500/60 relative overflow-hidden ultraviolet-glow">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <span class="text-[9px] font-extrabold uppercase tracking-widest text-amber-300 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/30">Ultravioleta Metal VIP</span>
+                            <h4 id="card-holder-name" onclick="promptEdit('userName')" class="text-sm font-bold text-white mt-1 editable-val">Natan Silva</h4>
+                        </div>
+                        <i data-lucide="wifi" class="w-5 h-5 text-purple-400 rotate-90"></i>
+                    </div>
+                    <p class="text-base tracking-widest font-mono text-purple-200 font-bold mb-4">5542 •••• •••• 9901</p>
+                    <div class="flex justify-between items-end text-xs text-neutral-300">
+                        <div>
+                            <p class="text-[9px] text-neutral-400 uppercase">Validade</p>
+                            <p class="font-bold text-white">12/32</p>
+                        </div>
+                        <div>
+                            <p class="text-[9px] text-neutral-400 uppercase">CVV Dinâmico</p>
+                            <p class="font-bold text-amber-400">882</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARTÃO VIRTUAL -->
+                <div class="bg-gradient-to-br from-nu-deepPurple to-nu-purple p-5 rounded-2xl border border-purple-800">
+                    <div class="flex justify-between items-start mb-6">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-purple-200">Cartão Virtual Compras Online</span>
+                        <button onclick="showToast('Número copiado!')" class="text-xs bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-md text-white font-medium flex items-center space-x-1">
+                            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                            <span>Copiar</span>
+                        </button>
+                    </div>
+                    <p class="text-base tracking-widest font-mono text-white font-bold mb-4">4024 8812 9011 4482</p>
+                </div>
+            </div>
+
+            <button onclick="closeModal('modal-cards')" class="w-full py-3 bg-nu-card border border-neutral-700 font-bold text-sm rounded-full text-white hover:bg-neutral-800">
+                Fechar
+            </button>
+        </div>
+    </div>
+
+    <!-- AUXILIARY TRANSACTION MODALS -->
+    <div id="modal-pix" class="fixed inset-0 bg-black/80 z-50 hidden flex justify-center items-end sm:items-center p-0 sm:p-4">
+        <div class="w-full max-w-md bg-nu-black rounded-t-3xl sm:rounded-3xl p-6 sheet-up border border-neutral-800">
+            <div class="flex justify-between items-center mb-5"><h3 class="text-xl font-bold text-white">Área Pix</h3><button onclick="closeModal('modal-pix')" class="p-2 text-neutral-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button></div>
+            <div class="space-y-4 mb-6">
+                <input id="pix-key-input" type="text" placeholder="Chave Pix (CPF, E-mail ou Telefone)" class="w-full bg-nu-card border border-neutral-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-nu-purple">
+                <input id="pix-amount-input" type="number" step="0.01" placeholder="Valor (R$)" class="w-full bg-nu-card border border-neutral-700 rounded-xl p-3 text-lg font-bold text-white focus:outline-none focus:border-nu-purple">
+            </div>
+            <button onclick="executePixTransfer()" class="w-full py-3.5 bg-nu-purple font-extrabold text-sm rounded-full text-white active:scale-95 transition shadow-lg">Enviar Pix Agora</button>
+        </div>
+    </div>
+
+    <div id="modal-loan" class="fixed inset-0 bg-black/80 z-50 hidden flex justify-center items-end sm:items-center p-0 sm:p-4">
+        <div class="w-full max-w-md bg-nu-black rounded-t-3xl sm:rounded-3xl p-6 sheet-up border border-neutral-800">
+            <div class="flex justify-between items-center mb-5"><h3 class="text-xl font-bold text-white">Simular Empréstimo</h3><button onclick="closeModal('modal-loan')" class="p-2 text-neutral-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button></div>
+            <input id="loan-amount-input" type="number" value="3000" class="w-full bg-nu-card border border-neutral-700 rounded-xl p-3 text-lg font-bold text-white mb-6">
+            <button onclick="executeLoanContract()" class="w-full py-3.5 bg-emerald-600 font-extrabold text-sm rounded-full text-white">Contratar e Receber</button>
+        </div>
+    </div>
+
+    <div id="modal-caixinhas" class="fixed inset-0 bg-black/80 z-50 hidden flex justify-center items-end sm:items-center p-0 sm:p-4">
+        <div class="w-full max-w-md bg-nu-black rounded-t-3xl sm:rounded-3xl p-6 sheet-up border border-neutral-800">
+            <div class="flex justify-between items-center mb-5"><h3 class="text-xl font-bold text-white">Minhas Caixinhas</h3><button onclick="closeModal('modal-caixinhas')" class="p-2 text-neutral-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button></div>
+            <input id="caixinha-amount-input" type="number" placeholder="100,00" class="w-full bg-nu-card border border-neutral-700 rounded-xl p-3 text-lg font-bold text-white mb-6">
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="executeCaixinhaDeposit()" class="py-3 bg-nu-purple font-bold text-xs rounded-full text-white">Guardar Dinheiro</button>
+                <button onclick="executeCaixinhaWithdraw()" class="py-3 bg-nu-card border border-neutral-700 font-bold text-xs rounded-full text-white">Resgatar Valor</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-recharge" class="fixed inset-0 bg-black/80 z-50 hidden flex justify-center items-end sm:items-center p-0 sm:p-4">
+        <div class="w-full max-w-md bg-nu-black rounded-t-3xl sm:rounded-3xl p-6 sheet-up border border-neutral-800">
+            <div class="flex justify-between items-center mb-5"><h3 class="text-xl font-bold text-white">Recarga de Celular</h3><button onclick="closeModal('modal-recharge')" class="p-2 text-neutral-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button></div>
+            <select id="recharge-val-select" class="w-full bg-nu-card border border-neutral-700 rounded-xl p-3 text-sm font-bold text-white mb-6"><option value="20">R$ 20,00</option><option value="30" selected>R$ 30,00</option><option value="50">R$ 50,00</option></select>
+            <button onclick="executeRecharge()" class="w-full py-3.5 bg-nu-purple font-extrabold text-sm rounded-full text-white">Confirmar Recarga</button>
+        </div>
+    </div>
+
+    <div id="modal-crypto" class="fixed inset-0 bg-black/80 z-50 hidden flex justify-center items-end sm:items-center p-0 sm:p-4">
+        <div class="w-full max-w-md bg-nu-black rounded-t-3xl sm:rounded-3xl p-6 sheet-up border border-neutral-800">
+            <div class="flex justify-between items-center mb-5"><h3 class="text-xl font-bold text-white">Nu Cripto</h3><button onclick="closeModal('modal-crypto')" class="p-2 text-neutral-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button></div>
+            <input id="crypto-buy-amount" type="number" placeholder="50,00" class="w-full bg-nu-card border border-neutral-700 rounded-xl p-3 text-lg font-bold text-white mb-6">
+            <button onclick="executeCryptoBuy()" class="w-full py-3.5 bg-amber-500 font-extrabold text-sm rounded-full text-black">Comprar Bitcoin</button>
+        </div>
+    </div>
+
+    <div id="modal-deposit" class="fixed inset-0 bg-black/80 z-50 hidden flex justify-center items-end sm:items-center p-0 sm:p-4">
+        <div class="w-full max-w-md bg-nu-black rounded-t-3xl sm:rounded-3xl p-6 sheet-up border border-neutral-800">
+            <div class="flex justify-between items-center mb-5"><h3 class="text-xl font-bold text-white">Depositar Dinheiro</h3><button onclick="closeModal('modal-deposit')" class="p-2 text-neutral-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button></div>
+            <input id="dep-amount" type="number" placeholder="Digite o valor" class="w-full bg-nu-card border border-neutral-700 rounded-xl p-3 text-lg font-bold text-white mb-6">
+            <button onclick="executeDepositAction()" class="w-full py-3.5 bg-nu-purple font-bold text-sm rounded-full text-white">Confirmar Depósito</button>
+        </div>
+    </div>
+
+    <div id="modal-pay" class="fixed inset-0 bg-black/80 z-50 hidden flex justify-center items-end sm:items-center p-0 sm:p-4">
+        <div class="w-full max-w-md bg-nu-black rounded-t-3xl sm:rounded-3xl p-6 sheet-up border border-neutral-800">
+            <div class="flex justify-between items-center mb-5"><h3 class="text-xl font-bold text-white">Pagar Conta / Boleto</h3><button onclick="closeModal('modal-pay')" class="p-2 text-neutral-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button></div>
+            <input id="pay-boleto-amount" type="number" value="120.00" class="w-full bg-nu-card border border-neutral-700 rounded-xl p-3 text-lg font-bold text-white mb-6">
+            <button onclick="executeBoletoPayAction()" class="w-full py-3.5 bg-nu-purple font-bold text-sm rounded-full text-white">Pagar Boleto</button>
+        </div>
+    </div>
+
+    <div id="modal-transfer" class="fixed inset-0 bg-black/80 z-50 hidden flex justify-center items-end sm:items-center p-0 sm:p-4">
+        <div class="w-full max-w-md bg-nu-black rounded-t-3xl sm:rounded-3xl p-6 sheet-up border border-neutral-800">
+            <div class="flex justify-between items-center mb-5"><h3 class="text-xl font-bold text-white">Transferência Bancária</h3><button onclick="closeModal('modal-transfer')" class="p-2 text-neutral-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button></div>
+            <input id="trans-name" type="text" placeholder="Nome do favorecido" class="w-full bg-nu-card border border-neutral-700 rounded-xl p-3 text-sm text-white mb-3">
+            <input id="trans-amount" type="number" placeholder="Valor R$" class="w-full bg-nu-card border border-neutral-700 rounded-xl p-3 text-lg font-bold text-white mb-6">
+            <button onclick="executeTransferAction()" class="w-full py-3.5 bg-nu-purple font-bold text-sm rounded-full text-white">Transferir</button>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 bg-white text-black px-5 py-3 rounded-full shadow-2xl font-bold text-xs transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center space-x-2">
+        <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>
+        <span id="toast-text">Valor alterado com sucesso!</span>
+    </div>
+
+    <!-- APP LOGIC & STATE CONTROLLER WITH PERSISTENT LOCAL STORAGE -->
+    <script>
+        const STORAGE_KEY = 'nubank_simulator_state_v2';
+
+        const defaultState = {
+            userName: 'Natan',
+            balance: 2450.80,
+            creditInvoice: 840.20,
+            creditLimit: 4159.80,
+            caixinhaBalance: 3500.00,
+            nucoins: 2840,
+            isBalanceVisible: true,
+            transactions: [
+                { id: 1, title: 'Pix Recebido', desc: 'Fernanda Lima', amount: 350.00, type: 'in', date: 'Hoje, 11:30' },
+                { id: 2, title: 'Pagamento de Fatura', desc: 'Nubank Cartão', amount: -250.00, type: 'out', date: 'Ontem, 16:40' }
+            ]
+        };
+
+        let appState = loadStateFromStorage();
+
+        let currentEditingField = null;
+
+        window.onload = function() {
+            lucide.createIcons();
+            renderExtrato();
+            refreshUI();
+        };
+
+        // Persistent localStorage handler
+        function loadStateFromStorage() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    return { ...defaultState, ...parsed };
+                }
+            } catch (e) {
+                console.error("Failed to load local storage state", e);
+            }
+            return { ...defaultState };
+        }
+
+        function saveStateToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+            } catch (e) {
+                console.error("Failed to save state to local storage", e);
+            }
+        }
+
+        function formatBRL(val) {
+            return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        /* DIRECT CLICK TO EDIT LOGIC */
+        function promptEdit(field) {
+            currentEditingField = field;
+            const input = document.getElementById('quick-edit-input');
+            const title = document.getElementById('quick-edit-title');
+            const label = document.getElementById('quick-edit-label');
+
+            if (field === 'userName') {
+                title.textContent = 'Editar Nome de Exibição';
+                label.textContent = 'Novo nome';
+                input.type = 'text';
+                input.value = appState.userName;
+            } else if (field === 'balance') {
+                title.textContent = 'Editar Saldo da Conta';
+                label.textContent = 'Novo saldo principal (R$)';
+                input.type = 'number';
+                input.step = '0.01';
+                input.value = appState.balance;
+            } else if (field === 'creditInvoice') {
+                title.textContent = 'Editar Fatura do Cartão';
+                label.textContent = 'Novo valor da fatura (R$)';
+                input.type = 'number';
+                input.step = '0.01';
+                input.value = appState.creditInvoice;
+            } else if (field === 'creditLimit') {
+                title.textContent = 'Editar Limite Disponível';
+                label.textContent = 'Novo limite disponível (R$)';
+                input.type = 'number';
+                input.step = '0.01';
+                input.value = appState.creditLimit;
+            } else if (field === 'caixinhaBalance') {
+                title.textContent = 'Editar Saldo das Caixinhas';
+                label.textContent = 'Novo valor em Caixinhas (R$)';
+                input.type = 'number';
+                input.step = '0.01';
+                input.value = appState.caixinhaBalance;
+            } else if (field === 'nucoins') {
+                title.textContent = 'Editar NuCoins';
+                label.textContent = 'Quantidade de NuCoins';
+                input.type = 'number';
+                input.step = '1';
+                input.value = appState.nucoins;
+            }
+
+            openModal('modal-quick-edit');
+            setTimeout(() => input.focus(), 100);
+        }
+
+        function saveQuickEdit(e) {
+            e.preventDefault();
+            const inputVal = document.getElementById('quick-edit-input').value;
+
+            if (currentEditingField === 'userName') {
+                appState.userName = inputVal.trim() || 'Natan';
+                showToast('Nome atualizado!');
+            } else {
+                const numVal = parseFloat(inputVal) || 0;
+                if (currentEditingField === 'balance') {
+                    appState.balance = numVal;
+                    addTransaction('Ajuste de Saldo', 'Edição Manual Direta', numVal, 'in');
+                } else if (currentEditingField === 'creditInvoice') {
+                    appState.creditInvoice = numVal;
+                } else if (currentEditingField === 'creditLimit') {
+                    appState.creditLimit = numVal;
+                } else if (currentEditingField === 'caixinhaBalance') {
+                    appState.caixinhaBalance = numVal;
+                } else if (currentEditingField === 'nucoins') {
+                    appState.nucoins = parseInt(numVal) || 0;
+                }
+                showToast('Valor alterado com sucesso!');
+            }
+
+            saveStateToStorage();
+            refreshUI();
+            closeModal('modal-quick-edit');
+        }
+
+        function toggleBalanceVisibility() {
+            appState.isBalanceVisible = !appState.isBalanceVisible;
+            const eyeIcon = document.getElementById('eye-icon');
+            eyeIcon.setAttribute('data-lucide', appState.isBalanceVisible ? 'eye' : 'eye-off');
+            saveStateToStorage();
+            lucide.createIcons();
+            refreshUI();
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-page').forEach(page => page.classList.add('hidden'));
+
+            const navHome = document.getElementById('nav-home');
+            const navFin = document.getElementById('nav-finance');
+            const navHub = document.getElementById('nav-hub');
+
+            navHome.className = "flex flex-col items-center justify-center w-full text-neutral-500 hover:text-white";
+            navFin.className = "flex flex-col items-center justify-center w-full text-neutral-500 hover:text-white";
+            navHub.className = "flex flex-col items-center justify-center w-full text-neutral-500 hover:text-white";
+
+            if (tab === 'home') {
+                document.getElementById('tab-home').classList.remove('hidden');
+                navHome.className = "flex flex-col items-center justify-center w-full text-nu-purple";
+            } else if (tab === 'finance') {
+                document.getElementById('tab-finance').classList.remove('hidden');
+                navFin.className = "flex flex-col items-center justify-center w-full text-nu-purple";
+            } else if (tab === 'hub') {
+                document.getElementById('tab-hub').classList.remove('hidden');
+                navHub.className = "flex flex-col items-center justify-center w-full text-nu-purple";
+            }
+        }
+
+        function refreshUI() {
+            document.getElementById('user-greeting').textContent = `Olá, ${appState.userName}`;
+            document.getElementById('avatar-initial').textContent = appState.userName.charAt(0).toUpperCase();
+            document.getElementById('card-holder-name').textContent = appState.userName;
+            document.getElementById('nucoins-count').textContent = `${appState.nucoins.toLocaleString('pt-BR')} NuCoins`;
+            document.getElementById('hub-nucoins-val').textContent = `${appState.nucoins.toLocaleString('pt-BR')} NuCoins`;
+
+            const mainBal = document.getElementById('main-balance');
+            const invoice = document.getElementById('credit-invoice');
+            const limit = document.getElementById('credit-limit');
+            const finTotal = document.getElementById('finance-total-networth');
+            const finAcc = document.getElementById('fin-acc-bal');
+            const finBox = document.getElementById('fin-box-bal');
+
+            const totalPatrimony = appState.balance + appState.caixinhaBalance;
+
+            if (appState.isBalanceVisible) {
+                mainBal.textContent = formatBRL(appState.balance);
+                invoice.textContent = formatBRL(appState.creditInvoice);
+                limit.textContent = formatBRL(appState.creditLimit);
+                finTotal.textContent = formatBRL(totalPatrimony);
+                finAcc.textContent = formatBRL(appState.balance);
+                finBox.textContent = formatBRL(appState.caixinhaBalance);
+                mainBal.classList.remove('blur-balance');
+            } else {
+                mainBal.textContent = '••••';
+                invoice.textContent = '••••';
+                limit.textContent = '••••';
+                finTotal.textContent = '••••';
+                finAcc.textContent = '••••';
+                finBox.textContent = '••••';
+                mainBal.classList.add('blur-balance');
+            }
+
+            document.getElementById('credit-limit-slider').value = appState.creditLimit;
+            document.getElementById('limit-slider-val').textContent = formatBRL(appState.creditLimit);
+        }
+
+        function renderExtrato() {
+            const container = document.getElementById('extrato-feed');
+            container.innerHTML = '';
+
+            appState.transactions.forEach(t => {
+                const isPositive = t.type === 'in';
+                const icon = isPositive ? 'arrow-down-left' : 'arrow-up-right';
+                const valClass = isPositive ? 'text-emerald-400' : 'text-neutral-200';
+                const sign = isPositive ? '+' : '-';
+
+                const el = document.createElement('div');
+                el.className = 'flex justify-between items-center py-2.5 border-b border-neutral-800/50';
+                el.innerHTML = `
+                    <div class="flex items-center space-x-3.5">
+                        <div class="w-10 h-10 rounded-full bg-nu-card flex items-center justify-center text-neutral-300 border border-neutral-800">
+                            <i data-lucide="${icon}" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h5 class="text-xs font-bold text-white">${t.title}</h5>
+                            <p class="text-[11px] text-neutral-400">${t.desc} • ${t.date}</p>
+                        </div>
+                    </div>
+                    <span class="text-xs font-bold ${valClass}">${appState.isBalanceVisible ? sign + ' ' + formatBRL(Math.abs(t.amount)) : '••••'}</span>
+                `;
+                container.appendChild(el);
+            });
+            lucide.createIcons();
+        }
+
+        function addTransaction(title, desc, amount, type) {
+            appState.transactions.unshift({
+                id: Date.now(),
+                title,
+                desc,
+                amount: type === 'out' ? -Math.abs(amount) : Math.abs(amount),
+                type,
+                date: 'Agora'
+            });
+            saveStateToStorage();
+            renderExtrato();
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-text').textContent = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => toast.classList.add('opacity-0', 'pointer-events-none'), 3000);
+        }
+
+        function executePixTransfer() {
+            const key = document.getElementById('pix-key-input').value || 'Chave Pix';
+            const val = parseFloat(document.getElementById('pix-amount-input').value);
+
+            if (!val || val <= 0) return showToast('Digite um valor válido.');
+            if (val > appState.balance) return showToast('Saldo insuficiente!');
+
+            appState.balance -= val;
+            addTransaction('Pix enviado', key, val, 'out');
+            saveStateToStorage();
+            refreshUI();
+            closeModal('modal-pix');
+            showToast(`Pix de ${formatBRL(val)} enviado!`);
+            document.getElementById('pix-amount-input').value = '';
+        }
+
+        function executeLoanContract() {
+            const val = parseFloat(document.getElementById('loan-amount-input').value);
+            if (!val || val <= 0) return showToast('Informe o valor.');
+
+            appState.balance += val;
+            addTransaction('Empréstimo Contratado', 'Crédito Pessoal', val, 'in');
+            saveStateToStorage();
+            refreshUI();
+            closeModal('modal-loan');
+            showToast(`Empréstimo de ${formatBRL(val)} creditado!`);
+        }
+
+        function executeCaixinhaDeposit() {
+            const val = parseFloat(document.getElementById('caixinha-amount-input').value);
+            if (!val || val <= 0 || val > appState.balance) return showToast('Saldo insuficiente.');
+
+            appState.balance -= val;
+            appState.caixinhaBalance += val;
+            addTransaction('Aplicação Caixinha', 'Reserva CDI', val, 'out');
+            saveStateToStorage();
+            refreshUI();
+            closeModal('modal-caixinhas');
+            showToast(`${formatBRL(val)} guardados na Caixinha!`);
+        }
+
+        function executeCaixinhaWithdraw() {
+            const val = parseFloat(document.getElementById('caixinha-amount-input').value);
+            if (!val || val <= 0 || val > appState.caixinhaBalance) return showToast('Valor indisponível.');
+
+            appState.caixinhaBalance -= val;
+            appState.balance += val;
+            addTransaction('Resgate Caixinha', 'Conta Principal', val, 'in');
+            saveStateToStorage();
+            refreshUI();
+            closeModal('modal-caixinhas');
+            showToast(`${formatBRL(val)} resgatados!`);
+        }
+
+        function executeRecharge() {
+            const val = parseFloat(document.getElementById('recharge-val-select').value);
+            if (val > appState.balance) return showToast('Saldo insuficiente.');
+
+            appState.balance -= val;
+            addTransaction('Recarga de Celular', 'Vivo Pré', val, 'out');
+            saveStateToStorage();
+            refreshUI();
+            closeModal('modal-recharge');
+            showToast(`Recarga efetuada!`);
+        }
+
+        function executeCryptoBuy() {
+            const val = parseFloat(document.getElementById('crypto-buy-amount').value);
+            if (!val || val <= 0 || val > appState.balance) return showToast('Saldo insuficiente.');
+
+            appState.balance -= val;
+            addTransaction('Compra Nu Cripto', 'Bitcoin (BTC)', val, 'out');
+            saveStateToStorage();
+            refreshUI();
+            closeModal('modal-crypto');
+            showToast(`Compra de Bitcoin realizada!`);
+        }
+
+        function executeDepositAction() {
+            const val = parseFloat(document.getElementById('dep-amount').value);
+            if (!val || val <= 0) return showToast('Informe o valor.');
+
+            appState.balance += val;
+            addTransaction('Depósito Recebido', 'Via Pix', val, 'in');
+            saveStateToStorage();
+            refreshUI();
+            closeModal('modal-deposit');
+            showToast(`Depósito de ${formatBRL(val)} efetuado!`);
+        }
+
+        function executeBoletoPayAction() {
+            const val = parseFloat(document.getElementById('pay-boleto-amount').value);
+            if (!val || val <= 0 || val > appState.balance) return showToast('Saldo insuficiente.');
+
+            appState.balance -= val;
+            addTransaction('Pagamento Boleto', 'Concessionária', val, 'out');
+            saveStateToStorage();
+            refreshUI();
+            closeModal('modal-pay');
+            showToast('Boleto quitado!');
+        }
+
+        function executeTransferAction() {
+            const name = document.getElementById('trans-name').value || 'Contato';
+            const val = parseFloat(document.getElementById('trans-amount').value);
+            if (!val || val <= 0 || val > appState.balance) return showToast('Saldo insuficiente.');
+
+            appState.balance -= val;
+            addTransaction('Transferência Enviada', name, val, 'out');
+            saveStateToStorage();
+            refreshUI();
+            closeModal('modal-transfer');
+            showToast('Transferência efetuada!');
+        }
+
+        function payInvoice() {
+            if (appState.creditInvoice <= 0) return showToast('Sua fatura já está zerada!');
+            if (appState.balance < appState.creditInvoice) return showToast('Saldo na conta insuficiente.');
+
+            const paidVal = appState.creditInvoice;
+            appState.balance -= paidVal;
+            appState.creditLimit += paidVal;
+            appState.creditInvoice = 0;
+
+            addTransaction('Pagamento de Fatura', 'Cartão Nubank', paidVal, 'out');
+            saveStateToStorage();
+            refreshUI();
+            showToast('Fatura paga e limite restabelecido!');
+        }
+
+        function updateLimitFromSlider(val) {
+            appState.creditLimit = parseFloat(val);
+            document.getElementById('limit-slider-val').textContent = formatBRL(appState.creditLimit);
+            saveStateToStorage();
+            refreshUI();
+        }
+
+        function clearHistory() {
+            appState.transactions = [];
+            saveStateToStorage();
+            renderExtrato();
+            showToast('Histórico limpo.');
+        }
+    </script>
+</body>
+</html>
